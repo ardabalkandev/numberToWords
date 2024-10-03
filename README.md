@@ -14,7 +14,7 @@ This PHP class converts numbers into their word representations in both Turkish 
 You can clone this repository or download the source code directly.
 
 ```bash
-git clone https://github.com/username/number-to-words.git
+git clone https://github.com/ardabalkandev/number-to-words.git
 ```
 
 ## Usage
