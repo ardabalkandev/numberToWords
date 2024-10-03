@@ -1,5 +1,4 @@
 <?php
-
 class NumberToWords {
     private $ones;
     private $teens;
@@ -18,7 +17,7 @@ class NumberToWords {
         switch ($this->language) {
             case 'TR': // TÜRKÇE
                 $this->ones = [0 => 'SIFIR', 1 => 'BİR', 2 => 'İKİ', 3 => 'ÜÇ', 4 => 'DÖRT', 5 => 'BEŞ', 6 => 'ALTI', 7 => 'YEDİ', 8 => 'SEKİZ', 9 => 'DOKUZ'];
-                $this->teens = [11 => 'ON BİR', 12 => 'ON İKİ', 13 => 'ON ÜÇ', 14 => 'ON DÖRT', 15 => 'ON BEŞ', 16 => 'ON ALTI', 17 => 'ON YEDİ', 18 => 'ON SEKİZ', 19 => 'ON DOKUZ'];
+                $this->teens = []; // Türkçede özel teen sayıları yok, tens ile normalde işlenecek.
                 $this->tens = [10 => 'ON', 20 => 'YİRMİ', 30 => 'OTUZ', 40 => 'KIRK', 50 => 'ELLİ', 60 => 'ALTMIŞ', 70 => 'YETMİŞ', 80 => 'SEKSEN', 90 => 'DOKSAN'];
                 $this->scales = [1000000000 => 'MİLYAR', 1000000 => 'MİLYON', 1000 => 'BİN', 100 => 'YÜZ'];
                 $this->decimalSeparator = 'VİRGÜL';
@@ -63,7 +62,7 @@ class NumberToWords {
         if ($number < 1000) {
             $hundreds = intval($number / 100);
             $remainder = $number % 100;
-            $hundredText = $this->ones[$hundreds] . ' ' . $this->scales[100];
+            $hundredText = ($hundreds == 1 && $this->language == 'TR') ? 'YÜZ' : $this->ones[$hundreds] . ' ' . $this->scales[100]; 
             return $remainder == 0 ? $hundredText : $hundredText . ' ' . $this->convert($remainder, $language);
         }
 
@@ -72,7 +71,11 @@ class NumberToWords {
             if ($number >= $scale) {
                 $scaleCount = intval($number / $scale);
                 $remainder = $number % $scale;
-                $scaleWord = $this->convert($scaleCount, $language) . ' ' . $scaleText;
+
+                $scaleWord = ($scaleCount == 1 && $scale >= 1000 && $this->language == 'TR') 
+                    ? $scaleText // 1 olduğu durumlarda 'BİR' yazılmadan sadece ölçek adı eklenir (örneğin 'BİN')
+                    : $this->convert($scaleCount, $language) . ' ' . $scaleText;
+
                 return $remainder == 0 ? $scaleWord : $scaleWord . ' ' . $this->convert($remainder, $language);
             }
         }
@@ -90,13 +93,19 @@ class NumberToWords {
         $wholePartText = $this->convert($wholePart, $this->language);
 
         // Ondalık kısmı dönüştür
-        if ($decimalPart > 0) {
-            $decimalPartText = $this->convert(intval($decimalPart), $this->language);
+        $decimalPartValue = intval($decimalPart);
+        if ($this->language == 'TR' && $decimalPart[0] == '0') {
+            // Türkçe'de ondalık kısmın ilk basamağı 0 ise
+            $decimalPartText = $this->convert($decimalPartValue, $this->language);
+            return $wholePartText . ' ' . $this->decimalSeparator . ' ' . $this->ones[0] . ' ' . $decimalPartText;
+        } elseif ($this->language == 'EN' && $decimalPart[0] == '0') {
+            // İngilizce'de ondalık kısmın ilk basamağı 0 ise
+            return $wholePartText . ' ' . $this->decimalSeparator . ' ' . $this->ones[0] . ' ' . $this->convert($decimalPartValue, $this->language);
+        } else {
+            // Normal durum
+            $decimalPartText = $this->convert($decimalPartValue, $this->language);
             return $wholePartText . ' ' . $this->decimalSeparator . ' ' . $decimalPartText;
         }
-
-        return $wholePartText;
     }
 }
-
 ?>
